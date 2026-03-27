@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SparkHack — Federated Learning Live</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&family=Bebas+Neue&display=swap"
+        rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #060b14;
+            --surface: #0d1525;
+            --surface2: #111d33;
+            --border: rgba(100, 160, 255, 0.10);
+            --border2: rgba(100, 160, 255, 0.18);
+            --accent: #00e5a0;
+            --accent2: #4a9eff;
+            --accent3: #ff7d4e;
+            --text: #e4eeff;
+            --muted: rgba(228, 238, 255, 0.45);
+            --h1: #5dab8a;
+            --h2: #4c9ed9;
+            --h3: #e08c55;
+            --glow-g: rgba(93, 171, 138, 0.35);
+            --glow-b: rgba(76, 158, 217, 0.35);
+            --glow-o: rgba(224, 140, 85, 0.35);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ─── GRID BG ─── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(74, 158, 255, 0.035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(74, 158, 255, 0.035) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background: radial-gradient(ellipse 70% 50% at 20% 10%, rgba(0, 229, 160, 0.06) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 60% at 80% 80%, rgba(74, 158, 255, 0.07) 0%, transparent 55%);
+        }
+
+        .page {
+            position: relative;
+            z-index: 1;
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 24px 28px 48px;
+        }
+
+        /* ─── HEADER ─── */
+        .header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .header-left {}
+
+        .logo-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--h1), var(--h2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+            box-shadow: 0 0 20px var(--glow-g);
+        }
+
+        .page-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.2rem;
+            letter-spacing: 0.05em;
+            line-height: 1;
+            background: linear-gradient(90deg, #fff 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-sub {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 4px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        /* ─── BADGES ─── */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            animation: pulse 1.8s infinite;
+        }
+
+        .badge-green {
+            background: rgba(0, 229, 160, 0.12);
+            border: 1px solid rgba(0, 229, 160, 0.3);
+            color: var(--accent);
+        }
+
+        .badge-green::before {
+            background: var(--accent);
+            box-shadow: 0 0 6px var(--accent);
+        }
+
+        .badge-blue {
+            background: rgba(74, 158, 255, 0.12);
+            border: 1px solid rgba(74, 158, 255, 0.3);
+            color: var(--accent2);
+        }
+
+        .badge-blue::before {
+            background: var(--accent2);
+            box-shadow: 0 0 6px var(--accent2);
+        }
+
+        .live-chip {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-family: 'Space Mono', monospace;
+            letter-spacing: 0.08em;
+            background: rgba(255, 60, 60, 0.1);
+            border: 1px solid rgba(255, 60, 60, 0.3);
+            color: #ff6b6b;
+            text-transform: uppercase;
+        }
+
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #ff6b6b;
+            box-shadow: 0 0 6px #ff6b6b;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1)
+            }
+
+            50% {
+                opacity: 0.5;
+                transform: scale(0.85)
+            }
+        }
+
+        /* ─── STAT CARDS ─── */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 22px 24px 18px;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.3s;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            border-radius: 14px 14px 0 0;
+        }
+
+        .stat-card:nth-child(1)::before {
+            background: linear-gradient(90deg, var(--h1), transparent);
+        }
+
+        .stat-card:nth-child(2)::before {
+            background: linear-gradient(90deg, var(--h2), transparent);
+        }
+
+        .stat-card:nth-child(3)::before {
+            background: linear-gradient(90deg, var(--h3), transparent);
+        }
+
+        .stat-card:hover {
+            border-color: var(--border2);
+        }
+
+        .stat-icon {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            opacity: 0.8;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--muted);
+            margin-bottom: 6px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .stat-value {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 3.4rem;
+            line-height: 1;
+            transition: all 0.5s ease;
+        }
+
+        .stat-card:nth-child(1) .stat-value {
+            color: var(--h1);
+        }
+
+        .stat-card:nth-child(2) .stat-value {
+            color: var(--h2);
+        }
+
+        .stat-card:nth-child(3) .stat-value {
+            color: var(--h3);
+        }
+
+        .stat-sub {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        /* ─── CHARTS ─── */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .chart-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 22px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .chart-card:nth-child(1)::after {
+            background: radial-gradient(circle, var(--glow-g) 0%, transparent 70%);
+        }
+
+        .chart-card:nth-child(2)::after {
+            background: radial-gradient(circle, var(--glow-b) 0%, transparent 70%);
+        }
+
+        .chart-title {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .chart-title span {
+            color: var(--text);
+            font-size: 13px;
+        }
+
+        .chart-wrap {
+            position: relative;
+            height: 280px;
+        }
+
+        /* ─── HOSPITAL BARS (custom) ─── */
+        .hospital-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            padding-top: 4px;
+        }
+
+        .hosp-row {}
+
+        .hosp-label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 7px;
+        }
+
+        .hosp-name {
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.03em;
+        }
+
+        .hosp-pct {
+            font-family: 'Space Mono', monospace;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .hosp-track {
+            height: 10px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 999px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .hosp-fill {
+            height: 100%;
+            border-radius: 999px;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .hosp-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent 60%, rgba(255, 255, 255, 0.2));
+            border-radius: 999px;
+        }
+
+        .h1-fill {
+            background: linear-gradient(90deg, #4c9ed9, #7bc4f7);
+            box-shadow: 0 0 12px rgba(76, 158, 217, 0.5);
+        }
+
+        .h2-fill {
+            background: linear-gradient(90deg, #5dab8a, #8adcb8);
+            box-shadow: 0 0 12px rgba(93, 171, 138, 0.5);
+        }
+
+        .h3-fill {
+            background: linear-gradient(90deg, #e08c55, #f5b480);
+            box-shadow: 0 0 12px rgba(224, 140, 85, 0.5);
+        }
+
+        .global-ref-line {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 22px;
+            padding: 10px 14px;
+            background: rgba(93, 171, 138, 0.08);
+            border: 1px dashed rgba(93, 171, 138, 0.3);
+            border-radius: 8px;
+        }
+
+        .global-ref-label {
+            font-size: 11px;
+            color: var(--h1);
+            font-family: 'Space Mono', monospace;
+        }
+
+        .global-ref-val {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--h1);
+            margin-left: auto;
+            font-family: 'Space Mono', monospace;
+        }
+
+        /* ─── BOTTOM ROW ─── */
+        .bottom-row {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        /* ─── FEED ─── */
+        .feed-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 22px;
+        }
+
+        .section-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            margin-bottom: 14px;
+            font-family: 'Space Mono', monospace;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title::before {
+            content: '';
+            display: block;
+            width: 14px;
+            height: 2px;
+            background: var(--accent);
+            border-radius: 2px;
+        }
+
+        .feed-inner {
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px;
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            line-height: 1.8;
+            max-height: 340px;
+            overflow-y: auto;
+        }
+
+        .feed-inner::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .feed-inner::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .feed-inner::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .feed-line {
+            margin: 0;
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .feed-line:last-child {
+            border-bottom: none;
+        }
+
+        .t-round {
+            color: var(--accent2);
+        }
+
+        .t-dp {
+            color: var(--accent);
+        }
+
+        .t-enc {
+            color: #ffd3a0;
+        }
+
+        .t-acc {
+            color: #c3b1e1;
+        }
+
+        .t-loss {
+            color: #ff9e9e;
+        }
+
+        /* ─── ROUND HISTORY TABLE ─── */
+        .table-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 22px;
+            overflow: hidden;
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--muted);
+            padding: 0 14px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tbody tr {
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: rgba(74, 158, 255, 0.05);
+        }
+
+        tbody td {
+            padding: 11px 14px;
+            font-size: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .round-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--surface2);
+            border: 1px solid var(--border2);
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--accent2);
+        }
+
+        .gain-pos {
+            color: var(--accent);
+        }
+
+        .gain-neg {
+            color: #ff6b6b;
+        }
+
+        .bar-mini {
+            display: inline-block;
+            height: 3px;
+            border-radius: 3px;
+            vertical-align: middle;
+            margin-left: 8px;
+        }
+
+        /* ─── PERF ANALYSIS ─── */
+        .analysis-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .mini-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 18px 20px;
+        }
+
+        .mini-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--muted);
+            margin-bottom: 8px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .mini-val {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            color: var(--accent);
+            line-height: 1;
+        }
+
+        .mini-sub {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        /* ─── HOSPITAL DETAIL ─── */
+        .hosp-detail {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .hosp-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            transition: border-color 0.3s;
+        }
+
+        .hosp-card:hover {
+            border-color: var(--border2);
+        }
+
+        .hosp-card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .hosp-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .hosp-card-name {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .hosp-card-meta {
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .hosp-card-acc {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.6rem;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        /* ─── FOOTER ─── */
+        .footer {
+            border-top: 1px solid var(--border);
+            padding-top: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .footer-text {
+            font-size: 11px;
+            color: var(--muted);
+            font-family: 'Space Mono', monospace;
+        }
+
+        .refresh-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--muted);
+            font-family: 'Space Mono', monospace;
+        }
+
+        .spin {
+            animation: spin 2s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg)
+            }
+
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        /* ─── WAITING STATE ─── */
+        .waiting {
+            text-align: center;
+            padding: 100px 0;
+            opacity: 0.5;
+            display: none;
+        }
+
+        .waiting p {
+            font-size: 15px;
+            margin-bottom: 8px;
+        }
+
+        .waiting code {
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            background: rgba(255, 255, 255, 0.06);
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+
+        /* ─── RESPONSIVE ─── */
+        @media (max-width: 900px) {
+
+            .charts-row,
+            .bottom-row,
+            .hosp-detail,
+            .analysis-row {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-row {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .stats-row {
+                grid-template-columns: 1fr;
+            }
+
+            .page {
+                padding: 16px;
+            }
+        }
+
+        /* ─── ANIMATIONS ─── */
+        .fade-in {
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .stagger-1 {
+            animation-delay: 0.05s;
+            opacity: 0;
+        }
+
+        .stagger-2 {
+            animation-delay: 0.1s;
+            opacity: 0;
+        }
+
+        .stagger-3 {
+            animation-delay: 0.15s;
+            opacity: 0;
+        }
+
+        .stagger-4 {
+            animation-delay: 0.2s;
+            opacity: 0;
+        }
+
+        .stagger-5 {
+            animation-delay: 0.25s;
+            opacity: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+
+        <!-- HEADER -->
+        <div class="header fade-in">
+            <div class="header-left">
+                <div class="logo-row">
+                    <div class="logo-icon">🏥</div>
+                    <div>
+                        <div class="page-title">SparkHack — Federated Learning Live</div>
+                        <div class="page-sub">Healthcare Track · Team ALL CAPS · Learning Without Sharing Data</div>
+                    </div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="live-chip">
+                    <div class="live-dot"></div> LIVE
+                </div>
+                <div class="badge badge-green">✓ DP ON</div>
+                <div class="badge badge-blue">✓ AES ON</div>
+            </div>
+        </div>
+
+        <!-- STATS ROW -->
+        <div class="stats-row">
+            <div class="stat-card fade-in stagger-1">
+                <div class="stat-icon">🔄</div>
+                <div class="stat-label">Current Round</div>
+                <div class="stat-value" id="stat-round">—</div>
+                <div class="stat-sub" id="stat-round-sub">of 10 total rounds</div>
+            </div>
+            <div class="stat-card fade-in stagger-2">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-label">Global Accuracy</div>
+                <div class="stat-value" id="stat-acc">—</div>
+                <div class="stat-sub" id="stat-acc-sub">federated model</div>
+            </div>
+            <div class="stat-card fade-in stagger-3">
+                <div class="stat-icon">🏥</div>
+                <div class="stat-label">Hospitals Connected</div>
+                <div class="stat-value" id="stat-hospitals">—</div>
+                <div class="stat-sub">active nodes</div>
+            </div>
+        </div>
+
+        <!-- CHARTS ROW -->
+        <div class="charts-row fade-in stagger-2">
+            <!-- Line Chart -->
+            <div class="chart-card">
+                <div class="chart-title">
+                    <span style="text-transform:uppercase;letter-spacing:.08em">Global Accuracy Over Rounds</span>
+                    <span id="chart-latest-acc" style="color:var(--h1)">—</span>
+                </div>
+                <div class="chart-wrap">
+                    <canvas id="lineChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Hospital Bars -->
+            <div class="chart-card">
+                <div class="chart-title">
+                    <span style="text-transform:uppercase;letter-spacing:.08em">Per-Hospital Accuracy</span>
+                    <span id="bar-round-label" style="color:var(--muted)">—</span>
+                </div>
+                <div id="hospital-bars-container" style="padding-top:8px;">
+                    <div class="hospital-bars">
+                        <div class="hosp-row">
+                            <div class="hosp-label-row">
+                                <span class="hosp-name" style="color:var(--h2)">Hospital 1 <span
+                                        style="opacity:.5;font-size:11px">(Age &lt; 45)</span></span>
+                                <span class="hosp-pct" style="color:var(--h2)" id="h1-pct">—</span>
+                            </div>
+                            <div class="hosp-track">
+                                <div class="hosp-fill h2-fill" id="h1-bar" style="width:0%"></div>
+                            </div>
+                        </div>
+                        <div class="hosp-row">
+                            <div class="hosp-label-row">
+                                <span class="hosp-name" style="color:var(--h1)">Hospital 2 <span
+                                        style="opacity:.5;font-size:11px">(Age 45–60)</span></span>
+                                <span class="hosp-pct" style="color:var(--h1)" id="h2-pct">—</span>
+                            </div>
+                            <div class="hosp-track">
+                                <div class="hosp-fill h1-fill" id="h2-bar" style="width:0%"></div>
+                            </div>
+                        </div>
+                        <div class="hosp-row">
+                            <div class="hosp-label-row">
+                                <span class="hosp-name" style="color:var(--h3)">Hospital 3 <span
+                                        style="opacity:.5;font-size:11px">(Age &gt; 60)</span></span>
+                                <span class="hosp-pct" style="color:var(--h3)" id="h3-pct">—</span>
+                            </div>
+                            <div class="hosp-track">
+                                <div class="hosp-fill h3-fill" id="h3-bar" style="width:0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="global-ref-line">
+                        <span class="global-ref-label">⬡ Global Federated Accuracy</span>
+                        <span class="global-ref-val" id="global-ref-val">—</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HOSPITAL DETAIL CARDS -->
+        <div class="hosp-detail fade-in stagger-3">
+            <div class="hosp-card">
+                <div class="hosp-card-header">
+                    <div class="hosp-dot" style="background:var(--h2); box-shadow:0 0 8px var(--glow-b)"></div>
+                    <div>
+                        <div class="hosp-card-name">Hospital 1</div>
+                        <div class="hosp-card-meta">Age &lt; 45 cohort</div>
+                    </div>
+                </div>
+                <div class="hosp-card-acc" style="color:var(--h2)" id="hc1-acc">—</div>
+                <div class="stat-sub">local accuracy this round</div>
+            </div>
+            <div class="hosp-card">
+                <div class="hosp-card-header">
+                    <div class="hosp-dot" style="background:var(--h1); box-shadow:0 0 8px var(--glow-g)"></div>
+                    <div>
+                        <div class="hosp-card-name">Hospital 2</div>
+                        <div class="hosp-card-meta">Age 45–60 cohort</div>
+                    </div>
+                </div>
+                <div class="hosp-card-acc" style="color:var(--h1)" id="hc2-acc">—</div>
+                <div class="stat-sub">local accuracy this round</div>
+            </div>
+            <div class="hosp-card">
+                <div class="hosp-card-header">
+                    <div class="hosp-dot" style="background:var(--h3); box-shadow:0 0 8px var(--glow-o)"></div>
+                    <div>
+                        <div class="hosp-card-name">Hospital 3</div>
+                        <div class="hosp-card-meta">Age &gt; 60 cohort</div>
+                    </div>
+                </div>
+                <div class="hosp-card-acc" style="color:var(--h3)" id="hc3-acc">—</div>
+                <div class="stat-sub">local accuracy this round</div>
+            </div>
+        </div>
+
+        <!-- PERFORMANCE ANALYSIS -->
+        <div style="margin-bottom:14px;" class="fade-in stagger-3">
+            <div class="section-title">📊 Performance Analysis</div>
+        </div>
+        <div class="analysis-row fade-in stagger-4">
+            <div class="mini-card">
+                <div class="mini-label">Best Global Accuracy (all rounds)</div>
+                <div class="mini-val" id="an-best-global">—</div>
+                <div class="mini-sub" id="an-best-global-sub">across all rounds</div>
+            </div>
+            <div class="mini-card">
+                <div class="mini-label">Best Local Accuracy (ever)</div>
+                <div class="mini-val" id="an-best-local" style="color:var(--h3)">—</div>
+                <div class="mini-sub">best individual hospital</div>
+            </div>
+            <div class="mini-card">
+                <div class="mini-label">Max FL Gain This Round</div>
+                <div class="mini-val" id="an-fl-gain" style="color:var(--accent2)">—</div>
+                <div class="mini-sub">global vs best local</div>
+            </div>
+        </div>
+
+        <!-- BOTTOM ROW: FEED + TABLE -->
+        <div class="bottom-row fade-in stagger-4">
+            <!-- FEED -->
+            <div class="feed-card">
+                <div class="section-title">📋 Activity Feed</div>
+                <div class="feed-inner" id="feed-inner">
+                    <p class="feed-line" style="opacity:0.4">Waiting for rounds data…</p>
+                </div>
+            </div>
+
+            <!-- TABLE -->
+            <div class="table-card">
+                <div class="section-title">🔍 Round History</div>
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Global Acc</th>
+                                <th>Loss</th>
+                                <th>Best Local</th>
+                                <th>FL Gain</th>
+                                <th>Sites</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-tbody">
+                            <tr>
+                                <td colspan="6" style="text-align:center;opacity:0.4;padding:24px;">No rounds yet</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer fade-in stagger-5">
+            <div class="footer-text" id="footer-text">Waiting for data…</div>
+            <div class="refresh-indicator"><span class="spin">↻</span>&nbsp;Auto-refreshing every 2s</div>
+        </div>
+
+    </div><!-- /page -->
+
+    <script>
+        // ─── MOCK DATA GENERATOR ──────────────────────────────────────────────────────
+        // In production: replace loadRounds() to fetch from your rounds.json
+        const MOCK_ENABLED = false;
+        let mockState = { round: 0, lastAcc: 0.62 };
+
+        async function loadRounds() {
+            try {
+                const response = await fetch('../logs/rounds.json');
+
+                // Check if the file was found and loaded correctly
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log("Data received", data)
+                // If you need to keep a global reference like _rounds:
+                rounds = data;
+
+                return rounds;
+            } catch (error) {
+                console.error("Could not load rounds:", error);
+                return []; // Return empty array as a fallback
+            }
+        }
+
+        function generateMockRound(r) {
+            const base = 0.62 + (r / 10) * 0.28 + (Math.random() - 0.5) * 0.03;
+            const acc = Math.min(0.98, Math.max(0.60, base));
+            const loss = Math.max(0.05, 0.85 - (r / 10) * 0.7 + (Math.random() - 0.5) * 0.05);
+            const ia = [
+                Math.min(0.97, acc - 0.04 + Math.random() * 0.06),
+                Math.min(0.97, acc - 0.02 + Math.random() * 0.06),
+                Math.min(0.97, acc - 0.06 + Math.random() * 0.08),
+            ];
+            return { round: r, accuracy: acc, loss, hospitals: 3, individual_accuracies: ia };
+        }
+
+        let _rounds = [];
+        // function loadRounds() {
+        //     // ─ Replace this function body with a fetch() to your rounds.json ─
+        //     if (MOCK_ENABLED) {
+        //         if (mockState.round < 10) {
+        //             mockState.round++;
+        //             _rounds.push(generateMockRound(mockState.round));
+        //         }
+        //         return _rounds;
+        //     }
+        //     return [];
+        // }
+
+        // ─── CHART SETUP ─────────────────────────────────────────────────────────────
+        let lineChart;
+        function initChart() {
+            const ctx = document.getElementById('lineChart').getContext('2d');
+            lineChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Global Accuracy',
+                            data: [],
+                            borderColor: '#5dab8a',
+                            backgroundColor: 'rgba(93,171,138,0.08)',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#5dab8a',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 1.5,
+                            borderWidth: 2.5,
+                        },
+                        {
+                            label: 'Best Local (dashed ref)',
+                            data: [],
+                            borderColor: 'rgba(255,255,255,0.2)',
+                            borderDash: [5, 4],
+                            fill: false,
+                            pointRadius: 0,
+                            tension: 0.4,
+                            borderWidth: 1.5,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(13,21,37,0.95)',
+                            borderColor: 'rgba(100,160,255,0.2)',
+                            borderWidth: 1,
+                            titleColor: '#fff',
+                            bodyColor: 'rgba(228,238,255,0.7)',
+                            titleFont: { family: 'Space Mono', size: 11 },
+                            bodyFont: { family: 'Space Mono', size: 11 },
+                            callbacks: {
+                                label: ctx => ` ${ctx.dataset.label}: ${(ctx.raw * 100).toFixed(1)}%`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Round', color: 'rgba(228,238,255,0.4)', font: { family: 'Space Mono', size: 10 } },
+                            grid: { color: 'rgba(100,160,255,0.05)' },
+                            ticks: { color: 'rgba(228,238,255,0.5)', font: { family: 'Space Mono', size: 10 } }
+                        },
+                        y: {
+                            min: 0.5, max: 1.0,
+                            title: { display: true, text: 'Accuracy', color: 'rgba(228,238,255,0.4)', font: { family: 'Space Mono', size: 10 } },
+                            grid: { color: 'rgba(100,160,255,0.05)' },
+                            ticks: {
+                                color: 'rgba(228,238,255,0.5)',
+                                font: { family: 'Space Mono', size: 10 },
+                                callback: v => (v * 100).toFixed(0) + '%'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ─── RENDER ───────────────────────────────────────────────────────────────────
+        function pct(v) { return (v * 100).toFixed(1) + '%'; }
+        function fmt4(v) { return v.toFixed(4); }
+
+        function render(rounds) {
+            if (!rounds || rounds.length === 0) return;
+
+            const latest = rounds[rounds.length - 1];
+            const curRound = latest.round;
+            const globalAcc = latest.accuracy || 0;
+            const hospitals = latest.hospitals || 3;
+            const indAccs = (latest.individual_accuracies || [0, 0, 0]).slice(0, 3);
+            while (indAccs.length < 3) indAccs.push(0);
+
+            // Stat cards
+            document.getElementById('stat-round').textContent = curRound;
+            document.getElementById('stat-round-sub').textContent = `of 10 total rounds`;
+            document.getElementById('stat-acc').textContent = pct(globalAcc);
+            document.getElementById('stat-acc-sub').textContent = `loss: ${fmt4(latest.loss || 0)}`;
+            document.getElementById('stat-hospitals').textContent = hospitals;
+
+            // Hospital bars
+            const hospLabels = ['h1', 'h2', 'h3'];
+            const hospColors = ['var(--h2)', 'var(--h1)', 'var(--h3)'];
+            indAccs.forEach((v, i) => {
+                const id = i + 1;
+                document.getElementById(`h${id}-pct`).textContent = pct(v);
+                document.getElementById(`h${id}-bar`).style.width = (v * 100).toFixed(1) + '%';
+            });
+            document.getElementById('bar-round-label').textContent = `Round ${curRound}`;
+            document.getElementById('global-ref-val').textContent = pct(globalAcc);
+            document.getElementById('chart-latest-acc').textContent = pct(globalAcc);
+
+            // Hospital detail cards
+            [1, 2, 3].forEach(i => {
+                document.getElementById(`hc${i}-acc`).textContent = pct(indAccs[i - 1] || 0);
+            });
+
+            // Analysis cards
+            const allGlobals = rounds.map(r => r.accuracy || 0);
+            const allLocals = rounds.flatMap(r => r.individual_accuracies || []);
+            const bestGlobal = Math.max(...allGlobals);
+            const bestLocal = allLocals.length ? Math.max(...allLocals) : 0;
+            const gainNow = globalAcc - Math.max(...indAccs);
+            document.getElementById('an-best-global').textContent = pct(bestGlobal);
+            document.getElementById('an-best-global-sub').textContent = `round ${rounds.findIndex(r => r.accuracy === bestGlobal) + 1}`;
+            document.getElementById('an-best-local').textContent = pct(bestLocal);
+            document.getElementById('an-fl-gain').textContent = (gainNow >= 0 ? '+' : '') + pct(gainNow);
+
+            // Line chart
+            const roundLabels = rounds.map(r => `R${r.round}`);
+            const accData = rounds.map(r => r.accuracy || 0);
+            const bestLocalPerRound = rounds.map(r => r.individual_accuracies ? Math.max(...r.individual_accuracies) : 0);
+
+            lineChart.data.labels = roundLabels;
+            lineChart.data.datasets[0].data = accData;
+            lineChart.data.datasets[1].data = bestLocalPerRound;
+            lineChart.update('active');
+
+            // Activity feed
+            const feedEl = document.getElementById('feed-inner');
+            const feedEntries = rounds.slice(-20).reverse();
+            feedEl.innerHTML = feedEntries.map(r => {
+                const ia = (r.individual_accuracies || []).map((v, i) => `H${i + 1}=${v.toFixed(4)}`).join('  ');
+                const parts = [
+                    `<span class="t-round">[Round ${String(r.round).padStart(2, '0')}]</span>`,
+                    r.accuracy != null ? `<span class="t-acc">global_acc=${r.accuracy.toFixed(4)}</span>` : '',
+                    r.loss != null ? `<span class="t-loss">loss=${r.loss.toFixed(4)}</span>` : '',
+                    ia ? `[${ia}]` : '',
+                    `hospitals=${r.hospitals || 3}`,
+                    `<span class="t-dp">· DP noise added, sigma=0.01</span>`,
+                    `<span class="t-enc">· AES-256 encrypted, sending…</span>`,
+                ].filter(Boolean).join('  ');
+                return `<p class="feed-line">${parts}</p>`;
+            }).join('');
+
+            // History table
+            const tbody = document.getElementById('history-tbody');
+            const tableRows = rounds.slice().reverse().map(r => {
+                const bestL = r.individual_accuracies ? Math.max(...r.individual_accuracies) : 0;
+                const gain = (r.accuracy || 0) - bestL;
+                const gainClass = gain >= 0 ? 'gain-pos' : 'gain-neg';
+                const gainStr = (gain >= 0 ? '+' : '') + pct(gain);
+                const barW = Math.round((r.accuracy || 0) * 80);
+                return `<tr>
+      <td><span class="round-pill">${r.round}</span></td>
+      <td><span style="color:var(--h1)">${pct(r.accuracy || 0)}</span>
+        <span class="bar-mini" style="background:var(--h1);width:${barW}px"></span></td>
+      <td style="color:rgba(228,238,255,.6)">${fmt4(r.loss || 0)}</td>
+      <td style="color:var(--h3)">${pct(bestL)}</td>
+      <td class="${gainClass}">${gainStr}</td>
+      <td style="color:var(--muted)">${r.hospitals || 3}</td>
+    </tr>`;
+            }).join('');
+            tbody.innerHTML = tableRows || `<tr><td colspan="6" style="text-align:center;opacity:.4;padding:24px;">No rounds yet</td></tr>`;
+
+            // Footer
+            const bestInd = Math.max(...indAccs);
+            document.getElementById('footer-text').textContent =
+                `Last updated: Round ${curRound}  ·  ${hospitals} hospitals connected  ·  Global ${pct(globalAcc)} vs best local ${pct(bestInd)}`;
+        }
+
+        // ─── LOOP ────────────────────────────────────────────────────────────────────
+        initChart();
+
+        async function tick() {
+            const rounds = await loadRounds();
+            if (rounds && rounds.length > 0) {
+                render(rounds);
+            }
+            setTimeout(tick, 2000);
+        }
+        tick();
+    </script>
+</body>
+
+</html>
