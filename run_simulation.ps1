@@ -14,4 +14,4 @@ Start-Sleep -Seconds 2
 
 Write-Host "Opening Live Dashboard..." -ForegroundColor Magenta
 # This will automatically open the HTML file in your default web browser
-Start-Process "dashboard\dashboard.html"
+Start-Process "http://127.0.0.1:3000/dashboard/dashboard.html"

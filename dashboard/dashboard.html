@@ -865,6 +865,10 @@
                 </div>
             </div>
             <div class="header-right">
+                <button onclick="runBatchFile()" class="badge badge-blue"
+                    style="cursor: pointer; border-color: var(--accent2); color: var(--accent2); background: transparent;">
+                    ▶ RUN SERVERS
+                </button>
                 <div class="live-chip">
                     <div class="live-dot"></div> LIVE
                 </div>
@@ -1062,6 +1066,13 @@
         // In production: replace loadRounds() to fetch from your rounds.json
         const MOCK_ENABLED = false;
         let mockState = { round: 0, lastAcc: 0.62 };
+        
+        function runBatchFile() {
+            fetch('http://127.0.0.1:5000/run-predict', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => alert(data.message))
+                .catch(err => console.error('Error:', err));
+        }
 
         async function loadRounds() {
             try {
