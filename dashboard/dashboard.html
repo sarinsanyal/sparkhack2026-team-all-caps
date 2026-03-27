@@ -506,7 +506,7 @@
             font-family: 'Space Mono', monospace;
             font-size: 11px;
             line-height: 1.8;
-            max-height: 340px;
+            max-height: 430px;
             overflow-y: auto;
         }
 
@@ -865,6 +865,10 @@
                 </div>
             </div>
             <div class="header-right">
+                <button onclick="openPredictModal()" class="badge"
+                    style="cursor:pointer; border:1px solid var(--accent); color:var(--accent); background:transparent; font-family:'Space Mono';">
+                    ✚ NEW PREDICTION
+                </button>
                 <button onclick="runBatchFile()" class="badge badge-blue"
                     style="cursor: pointer; border-color: var(--accent2); color: var(--accent2); background: transparent;">
                     ▶ RUN SERVERS
@@ -1066,7 +1070,73 @@
         // In production: replace loadRounds() to fetch from your rounds.json
         const MOCK_ENABLED = false;
         let mockState = { round: 0, lastAcc: 0.62 };
-        
+        function openPredictModal() {
+            document.getElementById('predictModal').style.display = 'flex';
+            document.getElementById('predictResult').style.display = 'none';
+        }
+
+        function closePredictModal() {
+            document.getElementById('predictModal').style.display = 'none';
+        }
+
+        async function submitPrediction() {
+            const resultDiv = document.getElementById('predictResult');
+            const btn = document.getElementById('predictBtn');
+
+            // Gather values from each input field in the correct order
+            const features = [
+                parseFloat(document.getElementById('f-age').value),
+                parseFloat(document.getElementById('f-sex').value),
+                parseFloat(document.getElementById('f-cp').value),
+                parseFloat(document.getElementById('f-rbp').value),
+                parseFloat(document.getElementById('f-chol').value),
+                parseFloat(document.getElementById('f-fbs').value),
+                parseFloat(document.getElementById('f-ecg').value),
+                parseFloat(document.getElementById('f-hr').value),
+                parseFloat(document.getElementById('f-ang').value),
+                parseFloat(document.getElementById('f-old').value),
+                parseFloat(document.getElementById('f-slope').value),
+                parseFloat(document.getElementById('f-vess').value),
+                parseFloat(document.getElementById('f-thal').value)
+            ];
+
+            // Validate that all fields are filled
+            if (features.some(isNaN)) {
+                alert("Please fill out all 13 fields with numbers.");
+                return;
+            }
+
+            btn.innerText = "QUERYING GLOBAL MODEL...";
+            btn.disabled = true;
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `<span style="color:var(--muted); font-family:'Space Mono'; font-size:11px;">Computing probability...</span>`;
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ features: features })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    resultDiv.innerHTML = `<span style="color:#ff4a4a;">Error: ${data.error}</span>`;
+                } else {
+                    const riskColor = data.is_high_risk ? '#ff4a4a' : 'var(--accent)';
+                    resultDiv.innerHTML = `
+                <div style="font-family:'Space Mono'; font-size:10px; color:var(--muted); text-transform:uppercase;">Inference Successful</div>
+                <div style="font-family:'Bebas Neue'; font-size:36px; color:${riskColor}; margin:5px 0;">${data.prediction}</div>
+                <div style="font-family:'Space Mono'; font-size:12px; color:white;">Confidence Index: ${(data.probability * 100).toFixed(2)}%</div>
+            `;
+                }
+            } catch (err) {
+                resultDiv.innerHTML = `<span style="color:#ff4a4a; font-size:12px;">Error: Could not connect to app.py</span>`;
+            } finally {
+                btn.innerText = "CALCULATE RISK";
+                btn.disabled = false;
+            }
+        }
         function runBatchFile() {
             fetch('http://127.0.0.1:5000/run-predict', { method: 'POST' })
                 .then(response => response.json())
@@ -1308,6 +1378,121 @@
         }
         tick();
     </script>
+    <div id="predictModal"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(6,11,20,0.95); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(10px);">
+        <div
+            style="background:var(--surface); padding:30px; border:1px solid var(--border2); border-radius:16px; width:650px; max-height: 90vh; overflow-y: auto; font-family:'DM Sans'; box-shadow: 0 25px 50px rgba(0,0,0,0.6);">
+            <h2 style="color:white; margin-bottom:5px; font-family:'Bebas Neue'; letter-spacing:1px; font-size:32px;">
+                Patient Inference</h2>
+            <p style="color:var(--muted); font-size:12px; margin-bottom:20px; font-family:'Space Mono';">Fill in all 13
+                clinical parameters:</p>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px;">
+                <div class="input-group">
+                    <label
+                        style="display:block; color:var(--accent2); font-size:10px; font-family:'Space Mono'; margin-bottom:5px;">AGE</label>
+                    <input type="number" id="f-age" placeholder="e.g. 52"
+                        style="width:100%; padding:10px; background:var(--bg); border:1px solid var(--border); color:white; border-radius:4px; outline:none;">
+                </div>
+                <div class="input-group">
+                    <label
+                        style="display:block; color:var(--accent2); font-size:10px; font-family:'Space Mono'; margin-bottom:5px;">SEX
+                        (1=M, 0=F)</label>
+                    <input type="number" id="f-sex" placeholder="0 or 1"
+                        style="width:100%; padding:10px; background:var(--bg); border:1px solid var(--border); color:white; border-radius:4px; outline:none;">
+                </div>
+                <div class="input-group">
+                    <label
+                        style="display:block; color:var(--accent2); font-size:10px; font-family:'Space Mono'; margin-bottom:5px;">CHEST
+                        PAIN TYPE (0-3)</label>
+                    <input type="number" id="f-cp" placeholder="0-3"
+                        style="width:100%; padding:10px; background:var(--bg); border:1px solid var(--border); color:white; border-radius:4px; outline:none;">
+                </div>
+                <div class="input-group">
+                    <label
+                        style="display:block; color:var(--accent2); font-size:10px; font-family:'Space Mono'; margin-bottom:5px;">RESTING
+                        BP (mmHg)</label>
+                    <input type="number" id="f-rbp" placeholder="e.g. 130"
+                        style="width:100%; padding:10px; background:var(--bg); border:1px solid var(--border); color:white; border-radius:4px; outline:none;">
+                </div>
+                <div class="input-group">
+                    <label
+                        style="display:block; color:var(--accent2); font-size:10px; font-family:'Space Mono'; margin-bottom:5px;">CHOLESTEROL
+                        (mg/dl)</label>
+                    <input type="number" id="f-chol" placeholder="e.g. 240"
+                        style="width:100%; padding:10px; background:var(--bg); border:1px solid var(--border); color:white; border-radius:4px; outline:none;">
+                </div>
+                <div class="input-group">
+                    <label
+                        style="display:block; color:var(--accent2); font-size:10px; font-family:'Space Mono'; margin-bottom:5px;">FASTING
+                        BLOOD SUGAR (1/0)</label>
+                    <input type="number" id="f-fbs" placeholder=">120mg/dl?"
+                        style="width:100%; padding:10px; background:var(--bg); border:1px solid var(--border); color:white; border-radius:4px; outline:none;">
+                </div>
+                <div class="input-group">
+                    <label
+                        style="display:block; color:var(--accent2); font-size:10px; font-family:'Space Mono'; margin-bottom:5px;">REST
+                        ECG (0-2)</label>
+                    <input type="number" id="f-ecg" placeholder="0, 1, or 2"
+                        style="width:100%; padding:10px; background:var(--bg); border:1px solid var(--border); color:white; border-radius:4px; outline:none;">
+                </div>
+                <div class="input-group">
+                    <label
+                        style="display:block; color:var(--accent2); font-size:10px; font-family:'Space Mono'; margin-bottom:5px;">MAX
+                        HEART RATE</label>
+                    <input type="number" id="f-hr" placeholder="e.g. 150"
+                        style="width:100%; padding:10px; background:var(--bg); border:1px solid var(--border); color:white; border-radius:4px; outline:none;">
+                </div>
+                <div class="input-group">
+                    <label
+                        style="display:block; color:var(--accent2); font-size:10px; font-family:'Space Mono'; margin-bottom:5px;">EXERCISE
+                        ANGINA (1/0)</label>
+                    <input type="number" id="f-ang" placeholder="1=Yes, 0=No"
+                        style="width:100%; padding:10px; background:var(--bg); border:1px solid var(--border); color:white; border-radius:4px; outline:none;">
+                </div>
+                <div class="input-group">
+                    <label
+                        style="display:block; color:var(--accent2); font-size:10px; font-family:'Space Mono'; margin-bottom:5px;">OLDPEAK
+                        (ST DEPR.)</label>
+                    <input type="number" step="0.1" id="f-old" placeholder="e.g. 1.2"
+                        style="width:100%; padding:10px; background:var(--bg); border:1px solid var(--border); color:white; border-radius:4px; outline:none;">
+                </div>
+                <div class="input-group">
+                    <label
+                        style="display:block; color:var(--accent2); font-size:10px; font-family:'Space Mono'; margin-bottom:5px;">SLOPE
+                        (0-2)</label>
+                    <input type="number" id="f-slope" placeholder="0, 1, or 2"
+                        style="width:100%; padding:10px; background:var(--bg); border:1px solid var(--border); color:white; border-radius:4px; outline:none;">
+                </div>
+                <div class="input-group">
+                    <label
+                        style="display:block; color:var(--accent2); font-size:10px; font-family:'Space Mono'; margin-bottom:5px;">MAJOR
+                        VESSELS (0-3)</label>
+                    <input type="number" id="f-vess" placeholder="Number of vessels"
+                        style="width:100%; padding:10px; background:var(--bg); border:1px solid var(--border); color:white; border-radius:4px; outline:none;">
+                </div>
+                <div class="input-group" style="grid-column: span 2;">
+                    <label
+                        style="display:block; color:var(--accent2); font-size:10px; font-family:'Space Mono'; margin-bottom:5px;">THAL
+                        (1=Normal, 2=Fixed, 3=Reversable)</label>
+                    <input type="number" id="f-thal" placeholder="1-3"
+                        style="width:100%; padding:10px; background:var(--bg); border:1px solid var(--border); color:white; border-radius:4px; outline:none;">
+                </div>
+            </div>
+
+            <div id="predictResult"
+                style="min-height:90px; margin-bottom:20px; padding:15px; border-radius:8px; background:rgba(0, 229, 160, 0.05); border:1px dashed var(--accent); text-align:center; display:none;">
+            </div>
+
+            <div style="display:flex; gap:12px;">
+                <button onclick="submitPrediction()" id="predictBtn"
+                    style="flex:2; padding:15px; background:var(--accent); border:none; color:#000; font-weight:700; border-radius:6px; cursor:pointer; font-family:'Space Mono'; letter-spacing:1px;">CALCULATE
+                    RISK</button>
+                <button onclick="closePredictModal()"
+                    style="flex:1; padding:15px; background:transparent; border:1px solid var(--border); color:white; border-radius:6px; cursor:pointer; font-family:'Space Mono';">CANCEL</button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

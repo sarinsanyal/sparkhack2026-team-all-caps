@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 
 
 def load_partition(hospital_id):
-    df = pd.read_csv("data/heart_disease.csv", header=None)
+    df = pd.read_csv("data/heart_disease.csv")
 
     df.replace("?", np.nan, inplace=True)
     df.dropna(inplace=True)
@@ -43,7 +43,7 @@ def load_partition(hospital_id):
 
 
 def load_full_data():
-    df = pd.read_csv("data/heart_disease.csv", header=None)
+    df = pd.read_csv("data/heart_disease.csv")
 
     df.replace("?", np.nan, inplace=True)
     df.dropna(inplace=True)
