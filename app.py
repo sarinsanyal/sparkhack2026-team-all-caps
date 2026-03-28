@@ -9,9 +9,10 @@ from flask_cors import CORS
 try:
     from predict_logic import load_model, preprocess, predict
     MODEL_AVAILABLE = True
-except ImportError:
+    print("✅ Model logic imported successfully.")
+except Exception as e:
     MODEL_AVAILABLE = False
-    print("⚠️ predict_logic.py not found. Prediction features will be disabled.")
+    print(f"❌ ERROR LOADING MODEL: {e}") # This will tell you the EXACT problem
 
 app = Flask(__name__)
 CORS(app)  # This allows your GitHub Pages/HTML file to talk to this server
